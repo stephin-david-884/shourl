@@ -15,4 +15,6 @@ export interface ITokenService {
     verifyAccessToken(token: string): AccessTokenPayload;
 
     verifyRefreshToken(token: string): RefreshTokenPayload;
+
+    generateCsrfToken(): string;
 }

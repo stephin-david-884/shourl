@@ -1,4 +1,5 @@
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 
 import { AppError } from "../../../domain/errors/AppError";
 import { statusCode } from "../../../application/constants/enums/statusCode";
@@ -79,5 +80,9 @@ export class TokenService implements ITokenService {
                 statusCode.UNAUTHORIZED,
             );
         }
+    }
+
+    generateCsrfToken(): string {
+        return crypto.randomBytes(32).toString("hex");
     }
 }
