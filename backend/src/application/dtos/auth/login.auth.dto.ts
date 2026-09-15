@@ -1,11 +1,9 @@
-export interface RegisterUserInputDTO {
-    name: string;
+export interface LoginInputDTO {
     email: string;
     password: string;
-    confirmPassword: string;
 }
 
-export interface RegisterUserOutputDTO {
+export interface LoginOutputDTO {
     success: boolean;
     accessToken: string;
     refreshToken: string;
