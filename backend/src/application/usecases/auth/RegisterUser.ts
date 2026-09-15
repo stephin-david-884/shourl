@@ -66,7 +66,10 @@ export class RegisterUser implements IRegisterUserUsecase {
                 userId: createdUser.getId(),
             });
 
-        createdUser.addRefreshToken(refreshToken);
+        const hashedRefreshToken =
+            await this.hashService.hash(refreshToken);
+
+        createdUser.addRefreshToken(hashedRefreshToken);
 
         await this.userRepository.save(createdUser);
 

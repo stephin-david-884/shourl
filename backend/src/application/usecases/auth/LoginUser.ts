@@ -64,7 +64,9 @@ export class LoginUser implements ILoginUserUsecase {
                 userId: user.getId(),
             });
 
-        user.addRefreshToken(refreshToken);
+        const hashedRefreshToken =  await this.hashService.hash(refreshToken);    
+
+        user.addRefreshToken(hashedRefreshToken);
 
         await this.userRepository.save(user);
 
