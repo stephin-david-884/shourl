@@ -11,7 +11,7 @@ const Home: React.FC = () => {
       <nav className="fixed top-0 left-0 w-full z-50 flex items-center justify-between px-8 py-4 bg-transparent backdrop-blur-md">
 
         <div className="text-2xl font-bold tracking-tight cursor-pointer">
-          ShoURL<span className="text-amber-400">AI</span>
+          Sho<span className="text-amber-400">URL</span>
         </div>
 
         <div className="flex gap-4">

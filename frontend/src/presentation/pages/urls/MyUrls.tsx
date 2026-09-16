@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 
-import { Link2 } from "lucide-react";
+import { Link2, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import { useUrls } from "../../../hooks/useUrls";
 import Spinner from "../../components/common/Spinner";
-import UrlCard from "../../components/url/UrlCard";
+import UrlTable from "../../components/url/UrlTable";
 
 const MyUrls = () => {
     const navigate = useNavigate();
@@ -79,7 +79,7 @@ const MyUrls = () => {
 
     if (urls.length === 0) {
         return (
-            <div className="mx-auto max-w-lg rounded-2xl border border-neutral-200 bg-white px-6 py-16 text-center shadow-sm">
+            <div className="mx-auto max-w-lg rounded-2xl border border-dashed border-neutral-300 bg-white px-6 py-16 text-center shadow-sm">
                 <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
                     <Link2 className="h-6 w-6" />
                 </div>
@@ -95,8 +95,9 @@ const MyUrls = () => {
                 <button
                     type="button"
                     onClick={() => navigate("/dashboard")}
-                    className="mt-6 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
+                    className="mt-6 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-blue-700"
                 >
+                    <Plus className="h-4 w-4" />
                     Shorten URL
                 </button>
             </div>
@@ -104,7 +105,28 @@ const MyUrls = () => {
     }
 
     return (
-        <div className="mx-auto max-w-3xl space-y-4">
+        <div className="mx-auto max-w-6xl space-y-5">
+            <div className="flex flex-col gap-3 rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <h2 className="text-lg font-semibold text-neutral-900">
+                        Your shortened URLs
+                    </h2>
+                    <p className="mt-1 text-sm text-neutral-500">
+                        {urls.length} {urls.length === 1 ? "link" : "links"} in
+                        your workspace
+                    </p>
+                </div>
+
+                <button
+                    type="button"
+                    onClick={() => navigate("/dashboard")}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-blue-700"
+                >
+                    <Plus className="h-4 w-4" />
+                    Shorten another
+                </button>
+            </div>
+
             {error && (
                 <div className="flex items-start justify-between gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
                     <p>{error}</p>
@@ -118,16 +140,13 @@ const MyUrls = () => {
                 </div>
             )}
 
-            {urls.map((url) => (
-                <UrlCard
-                    key={url.id}
-                    url={url}
-                    isDeleting={deletingId === url.id}
-                    isCopied={copiedId === url.id}
-                    onCopied={handleCopied}
-                    onDelete={handleDelete}
-                />
-            ))}
+            <UrlTable
+                urls={urls}
+                deletingId={deletingId}
+                copiedId={copiedId}
+                onCopied={handleCopied}
+                onDelete={handleDelete}
+            />
         </div>
     );
 };

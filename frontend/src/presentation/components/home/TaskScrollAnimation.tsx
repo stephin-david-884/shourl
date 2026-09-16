@@ -1,19 +1,21 @@
 import { type FC, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-type TaskCard = {
+type LinkCard = {
     radius: number;
     baseAngle: number;
     yOffset: number;
     width: number;
     height: number;
-    status: 0 | 1 | 2; // 0 = To Do, 1 = In Progress, 2 = Done
+    status: 0 | 1 | 2; // 0 = Queued, 1 = Live, 2 = Trending
 };
 
-const STATUS_LABEL = ['To do', 'In progress', 'Done'] as const;
+const STATUS_LABEL = ['Queued', 'Live', 'Trending'] as const;
+// where a click on this link is coming from, shown on the network nodes
+const SOURCE_LABEL = ['Web', 'Mobile', 'API'] as const;
 
-const createCards = (count: number): TaskCard[] => {
-    const cards: TaskCard[] = [];
+const createCards = (count: number): LinkCard[] => {
+    const cards: LinkCard[] = [];
     for (let i = 0; i < count; i++) {
         cards.push({
             radius: 90 + i * 18,
@@ -31,9 +33,9 @@ const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
 
 // status -> [fill rgb, glow rgb]
 const STATUS_COLOR: Record<0 | 1 | 2, [string, string]> = {
-    0: ['148, 163, 184', '148, 163, 184'], // to do - slate
-    1: ['56, 189, 248', '56, 189, 248'], // in progress - sky
-    2: ['52, 211, 153', '52, 211, 153'], // done - emerald
+    0: ['148, 163, 184', '148, 163, 184'], // queued - slate
+    1: ['56, 189, 248', '56, 189, 248'], // live - sky
+    2: ['52, 211, 153', '52, 211, 153'], // trending - emerald
 };
 
 const TaskScrollAnimation: FC = () => {
@@ -41,7 +43,7 @@ const TaskScrollAnimation: FC = () => {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const containerRef = useRef<HTMLDivElement | null>(null);
     const scrollProgressRef = useRef(0);
-    const cardsRef = useRef<TaskCard[]>(createCards(10));
+    const cardsRef = useRef<LinkCard[]>(createCards(10));
     const animationFrameRef = useRef<number | null>(null);
 
     useEffect(() => {
@@ -110,7 +112,7 @@ const TaskScrollAnimation: FC = () => {
             ctx.fillStyle = gradientBg;
             ctx.fillRect(0, 0, width, height);
 
-            // ambient drifting particles ("loose tasks")
+            // ambient drifting particles ("stray clicks" not yet attributed to a link)
             ctx.save();
             ctx.globalAlpha = 0.65;
             const particleCount = 40;
@@ -135,11 +137,11 @@ const TaskScrollAnimation: FC = () => {
 
             const cards = cardsRef.current;
 
-            // 0.2-0.4 checklist items get checked off / highlighted
-            const checkPhase = clamp01((progress - 0.2) / 0.2);
-            // 0.5-0.75 cards settle into three board columns
+            // 0.2-0.4 long URLs compress down into short links
+            const compressPhase = clamp01((progress - 0.2) / 0.2);
+            // 0.5-0.75 links settle into Queued / Live / Trending columns
             const boardPhase = clamp01((progress - 0.5) / 0.25);
-            // 0.75-1 team members connect in real time
+            // 0.75-1 click sources connect to their links in real time
             const syncPhase = clamp01((progress - 0.75) / 0.25);
 
             const columnX = [-1, 0, 1];
@@ -168,7 +170,7 @@ const TaskScrollAnimation: FC = () => {
 
                 const depthAlpha = 0.35 + 0.6 * (index / cards.length);
                 const [statusRgb] = STATUS_COLOR[card.status];
-                const glow = checkPhase * (0.3 + 0.3 * Math.sin(t * 3 + index));
+                const glow = compressPhase * (0.3 + 0.3 * Math.sin(t * 3 + index));
 
                 ctx.save();
                 ctx.translate(x, y);
@@ -200,7 +202,7 @@ const TaskScrollAnimation: FC = () => {
                 ctx.stroke();
 
                 const headerHeight = h * 0.16;
-                ctx.globalAlpha = depthAlpha * (0.6 + checkPhase * 0.3);
+                ctx.globalAlpha = depthAlpha * (0.6 + compressPhase * 0.3);
                 ctx.fillStyle = `rgba(13, 19, 35, 0.9)`;
                 ctx.beginPath();
                 ctx.moveTo(-w / 2 + radius, -h / 2);
@@ -214,7 +216,7 @@ const TaskScrollAnimation: FC = () => {
                 ctx.fill();
 
                 // status chip
-                ctx.globalAlpha = depthAlpha * (0.6 + checkPhase * 0.2);
+                ctx.globalAlpha = depthAlpha * (0.6 + compressPhase * 0.2);
                 const chipWidth = w * 0.5;
                 const chipHeight = headerHeight * 0.58;
                 const chipX = -w / 2 + chipWidth / 2 + 10;
@@ -258,52 +260,66 @@ const TaskScrollAnimation: FC = () => {
                 ctx.font = '9px system-ui, -apple-system, BlinkMacSystemFont, "Inter"';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                ctx.fillText(STATUS_LABEL[card.status].toUpperCase(), chipX, chipY + 0.5);
+                ctx.fillText(STATUS_LABEL[card.status], chipX, chipY + 0.5);
 
-                // task title (checkbox + strikethrough on completed)
-                ctx.globalAlpha = depthAlpha * (0.65 + checkPhase * 0.3);
-                const boxY = -h / 2 + headerHeight + 16;
-                const boxSize = 7;
-                ctx.strokeStyle = `rgba(${statusRgb}, 0.8)`;
-                ctx.lineWidth = 1.2;
-                ctx.strokeRect(-w / 2 + 14, boxY - boxSize / 2, boxSize, boxSize);
+                // link icon (two interlocking rings) + the long URL compressing into a short one
+                ctx.globalAlpha = depthAlpha * (0.65 + compressPhase * 0.3);
+                const iconY = -h / 2 + headerHeight + 16;
+                const ringR = 3.4;
+                ctx.strokeStyle = `rgba(${statusRgb}, 0.85)`;
+                ctx.lineWidth = 1.3;
+                ctx.beginPath();
+                ctx.arc(-w / 2 + 14, iconY, ringR, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.arc(-w / 2 + 14 + ringR * 1.1, iconY, ringR, 0, Math.PI * 2);
+                ctx.stroke();
                 if (card.status === 2) {
-                    ctx.fillStyle = `rgba(${statusRgb}, ${0.7 + 0.3 * checkPhase})`;
-                    ctx.fillRect(-w / 2 + 14, boxY - boxSize / 2, boxSize, boxSize);
+                    ctx.fillStyle = `rgba(${statusRgb}, ${0.55 + 0.3 * compressPhase})`;
+                    ctx.beginPath();
+                    ctx.arc(-w / 2 + 14, iconY, ringR, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.arc(-w / 2 + 14 + ringR * 1.1, iconY, ringR, 0, Math.PI * 2);
+                    ctx.fill();
                 }
-                const titleLen = w * 0.62 * (0.7 + 0.3 * Math.sin(t * 1.4 + index));
+
+                // the url line itself shrinks as compressPhase increases - a long link
+                // getting shortened - and glows once it's live/trending
+                const fullLen = w * 0.62 * (0.7 + 0.3 * Math.sin(t * 1.4 + index));
+                const shortLen = fullLen * (1 - compressPhase * 0.55);
                 ctx.strokeStyle = 'rgba(226, 232, 240, 0.5)';
                 ctx.lineWidth = 1.3;
                 ctx.beginPath();
-                ctx.moveTo(-w / 2 + 28, boxY);
-                ctx.lineTo(-w / 2 + 28 + titleLen, boxY);
+                ctx.moveTo(-w / 2 + 26, iconY);
+                ctx.lineTo(-w / 2 + 26 + shortLen, iconY);
                 ctx.stroke();
-                if (card.status === 2) {
-                    ctx.strokeStyle = `rgba(${statusRgb}, 0.9)`;
+                if (card.status >= 1) {
+                    ctx.strokeStyle = `rgba(${statusRgb}, ${0.5 + 0.4 * compressPhase})`;
+                    ctx.lineWidth = 1.6;
                     ctx.beginPath();
-                    ctx.moveTo(-w / 2 + 26, boxY);
-                    ctx.lineTo(-w / 2 + 28 + titleLen, boxY);
+                    ctx.moveTo(-w / 2 + 26, iconY);
+                    ctx.lineTo(-w / 2 + 26 + shortLen * 0.5, iconY);
                     ctx.stroke();
                 }
 
-                // subtask lines
+                // click sparkline - three bars that grow taller the more traffic a link has
+                const barBaseY = iconY + 26;
+                const barGap = 9;
                 for (let i = 0; i < 3; i++) {
-                    const lineY = boxY + 16 + i * 10;
-                    const baseLength = w * (0.55 - i * 0.08);
-                    const dynamic =
-                        baseLength * (0.6 + 0.4 * Math.sin(t * 2 + i * 0.7 + index * 0.4) * checkPhase);
-                    ctx.strokeStyle = 'rgba(148, 163, 184, 0.35)';
-                    ctx.lineWidth = 1;
-                    ctx.beginPath();
-                    ctx.moveTo(-w / 2 + 14, lineY);
-                    ctx.lineTo(-w / 2 + 14 + dynamic, lineY);
-                    ctx.stroke();
+                    const barX = -w / 2 + 14 + i * barGap;
+                    const target = card.status === 2 ? 0.55 + i * 0.15 : card.status === 1 ? 0.3 + i * 0.08 : 0.12;
+                    const wobble = 0.15 * Math.sin(t * 2.2 + i * 0.8 + index * 0.4) * compressPhase;
+                    const barH = Math.max(2, (target + wobble) * 24);
+                    ctx.strokeStyle = 'none';
+                    ctx.fillStyle = `rgba(${statusRgb}, ${0.3 + 0.35 * compressPhase})`;
+                    ctx.fillRect(barX, barBaseY + (24 - barH), 4, barH);
                 }
 
                 ctx.restore();
             });
 
-            // real-time collaborator network
+            // real-time click-source network
             const networkRadius = Math.min(width, height) * 0.28;
             const nodes: { x: number; y: number; size: number; phase: number; kind: 0 | 1 | 2 }[] = [];
             const nodeRingCounts = [4, 7, 10];
@@ -385,7 +401,7 @@ const TaskScrollAnimation: FC = () => {
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'top';
                 const offsetY = 6 + size * 0.5;
-                ctx.fillText(STATUS_LABEL[node.kind], node.x, node.y + offsetY);
+                ctx.fillText(SOURCE_LABEL[node.kind], node.x, node.y + offsetY);
             });
             ctx.restore();
 
@@ -422,13 +438,13 @@ const TaskScrollAnimation: FC = () => {
                 <div className="absolute inset-0 flex items-center justify-center z-20">
                     <div className="flex flex-col items-center gap-6 text-center px-4">
                         <h1 className="text-4xl md:text-5xl font-bold text-white">
-                            Turn to-dos into{' '}
-                            <span className="text-amber-400">done, together</span>
+                            Long links, short and{' '}
+                            <span className="text-amber-400">tracked</span>
                         </h1>
 
                         <p className="text-slate-300 max-w-md">
-                            Assign work, track progress live, and let AI prioritize what
-                            matters — synced across your whole team the moment it changes.
+                            Shorten any URL, share it anywhere, and watch clicks roll in —
+                            synced live across your whole team the moment they happen.
                         </p>
 
                         <button
