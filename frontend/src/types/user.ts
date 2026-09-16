@@ -24,7 +24,7 @@ export interface LoginResponse {
     user: User;
 }
 
-export interface RefreshTokenResponse { }
+export type RefreshTokenResponse = Record<string, never>;
 
 export interface CurrentUserResponse {
     user: User;

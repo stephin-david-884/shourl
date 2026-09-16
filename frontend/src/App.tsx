@@ -7,6 +7,7 @@ import { useAuth } from "./hooks/useAuth";
 import UserProtectedRoute from "./presentation/routes/UserProtectedRoute";
 const Home = lazy(() => import('./presentation/pages/home/Home'));
 const Dashboard = lazy(() => import('./presentation/pages/dashboard/Dashboard'));
+const MyUrls = lazy(() => import('./presentation/pages/urls/MyUrls'));
 const PageNotFound = lazy(() => import('./presentation/pages/common/PageNotFound'));
 
 const App = () => {
@@ -46,6 +47,7 @@ const App = () => {
 
           <Route element={<UserProtectedRoute />}>
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/urls" element={<MyUrls />} />
           </Route>
 
           <Route path="*" element={<PageNotFound />} />

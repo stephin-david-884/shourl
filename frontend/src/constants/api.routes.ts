@@ -6,4 +6,8 @@ export const API_ROUTES = {
     GET_ME: "/auth/me",
     LOGOUT: "/auth/logout",
   },
+  URLS: {
+    BASE: "/urls",
+    BY_ID: (urlId: string) => `/urls/${urlId}`,
+  },
 } as const;
