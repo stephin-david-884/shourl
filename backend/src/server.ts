@@ -4,8 +4,10 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import { createServer } from "http";
 import authRoutes from "./interfaces/routes/authRoutes";
+import urlRoutes from "./interfaces/routes/urlRoutes";
 import { errorHandler } from "./interfaces/middlewares/errorHandler";
 import { connectDB } from "./infrastructure/config/mongo.config";
+import { urlController } from "./infrastructure/di/container";
 
 dotenv.config();
 
@@ -33,6 +35,12 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 app.use("/api/auth", authRoutes);
+app.use("/api/urls", urlRoutes);
+
+app.get(
+  "/:shortCode",
+  urlController.redirectUrl,
+);
 
 app.use(errorHandler);
 
