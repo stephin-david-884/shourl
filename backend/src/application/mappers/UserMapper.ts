@@ -1,4 +1,3 @@
-import { Types } from "mongoose";
 import { User } from "../../domain/entities/User.entity";
 import { UserLean } from "../../infrastructure/database/models/User";
 
